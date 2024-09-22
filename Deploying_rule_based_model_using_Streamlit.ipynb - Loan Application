@@ -1,0 +1,257 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "kernelspec": {
+      "display_name": "Python 3",
+      "language": "python",
+      "name": "python3"
+    },
+    "language_info": {
+      "codemirror_mode": {
+        "name": "ipython",
+        "version": 3
+      },
+      "file_extension": ".py",
+      "mimetype": "text/x-python",
+      "name": "python",
+      "nbconvert_exporter": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.6.4"
+    },
+    "colab": {
+      "provenance": [],
+      "include_colab_link": true
+    },
+    "accelerator": "GPU"
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/manola1109/Model-Deployment/blob/main/Deploying_rule_based_model_using_Streamlit.ipynb%20-%20Loan%20Application\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "jPtUSXpZfntZ"
+      },
+      "source": [
+        "## Deploying the rule based model to automate loan prediction\n",
+        "\n",
+        "1. Building the Frontend of the application\n",
+        "2. Loading the data\n",
+        "3. Building the model to automate Loan Eligibility\n",
+        "4. Deploying the application"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "UyQbUqDr7AUK"
+      },
+      "source": [
+        "## 1. Building the Frontend of the application\n",
+        "\n",
+        "1.1 Install Required Libraries<br>\n",
+        "1.2 Creating the Frontend of the app using Streamlit\n",
+        "\n",
+        "### 1.1 Install Required Libraries"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "8o2Nv-0GVhsv",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "9cdc9d99-dbb8-46dd-bc5d-da9200c5f5e4"
+      },
+      "source": [
+        "!pip install --upgrade pyngrok"
+      ],
+      "execution_count": 13,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Requirement already satisfied: pyngrok in /usr/local/lib/python3.10/dist-packages (7.2.0)\n",
+            "Requirement already satisfied: PyYAML>=5.1 in /usr/local/lib/python3.10/dist-packages (from pyngrok) (6.0.2)\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "96rKP77EJSvR"
+      },
+      "source": [
+        "# installing streamlit\n",
+        "!pip install -q streamlit"
+      ],
+      "execution_count": 14,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "6FaA15vWZfyu",
+        "outputId": "ff22003e-b483-4125-f6d8-5a82f073456b"
+      },
+      "source": [
+        "!streamlit version"
+      ],
+      "execution_count": 15,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Streamlit, version 1.38.0\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "rlKW2k6x7YS-"
+      },
+      "source": [
+        "### 1.2 Creating the frontend of the app using streamlit"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "ZC4c6EMgRYX1",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "59367125-b77c-4cf8-9816-341c50f8faa0"
+      },
+      "source": [
+        "# creating the script\n",
+        "%%writefile app.py\n",
+        "\n",
+        "# importing streamlit\n",
+        "import streamlit as st\n",
+        "\n",
+        "# this is the main function in which we define our app\n",
+        "def main():\n",
+        "    # header of the page\n",
+        "    st.markdown(\"Check your Loan Eligibility\")\n",
+        "\n",
+        "    # 2. Loading the data\n",
+        "\n",
+        "    # following lines create boxes in which user can enter data required to make prediction\n",
+        "    Gender = st.selectbox('Gender',(\"Male\",\"Female\",\"Other\"))\n",
+        "    Married = st.selectbox('Marital Status',(\"Unmarried\",\"Married\",\"Other\"))\n",
+        "    ApplicantIncome = st.number_input(\"Monthly Income in Rupees\")\n",
+        "    LoanAmount = st.number_input(\"Loan Amount in Rupees\")\n",
+        "    result =\"\"\n",
+        "\n",
+        "    # when 'Check' is clicked, make the prediction and store it\n",
+        "    if st.button(\"Check\"):\n",
+        "        result = prediction(Gender, Married, ApplicantIncome, LoanAmount)\n",
+        "        st.success('Your loan is {}'.format(result))\n",
+        "\n",
+        "# defining the function which will make the prediction using the data which the user inputs\n",
+        "def prediction(Gender, Married, ApplicantIncome, LoanAmount):\n",
+        "\n",
+        "    # 3. Building the model to automate Loan Eligibility\n",
+        "    if (ApplicantIncome >= 100):\n",
+        "        loan_status = 'Approved'\n",
+        "    elif (LoanAmount < 100):\n",
+        "        loan_status = 'Approved'\n",
+        "    else:\n",
+        "        loan_status = 'Rejected'\n",
+        "    return loan_status\n",
+        "\n",
+        "if __name__=='__main__':\n",
+        "    main()"
+      ],
+      "execution_count": 16,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Overwriting app.py\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "dWM7e9709d72"
+      },
+      "source": [
+        "## 4. Deploying the application"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "fLsQUC3qgtZl"
+      },
+      "source": [
+        "# running the app\n",
+        "!streamlit run app.py &>/dev/null&"
+      ],
+      "execution_count": 17,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "G93y3SeHgf6H",
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "outputId": "5cd7b8af-e431-4144-f0c8-bcb3a7b6e171"
+      },
+      "source": [
+        "# making the locally-hosted web application to be publicly accessible\n",
+        "from pyngrok import ngrok\n",
+        "\n",
+        "public_url = ngrok.connect('8501')\n",
+        "public_url"
+      ],
+      "execution_count": 23,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "<NgrokTunnel: \"https://c24f-34-142-223-158.ngrok-free.app\" -> \"http://localhost:8501\">"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 23
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "kTg-2Nar2Wsi"
+      },
+      "source": [],
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
